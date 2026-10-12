@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320">
+  <path id="sky" fill="#d5e4dc" d="M0 0H480V320H0Z"/>
+  <path id="hill" fill="#24362c" d="M0 214C70 176 150 196 210 214C280 236 330 176 410 198C446 208 468 214 480 208V320H0Z"/>
+  <circle id="sun" cx="112" cy="104" r="40" fill="#e23d28"/>
+  <path id="glint" fill="#f4efe4" d="M78 150H146V166H78Z"/>
+  <circle id="moon" cx="412" cy="62" r="18" fill="#f7f1e4"/>
+  <path id="bird" fill="#1a1c16" d="M214 74L246 96L214 90Z"/>
+  <path id="bird-2" fill="#1a1c16" d="M268 92L302 112L268 106Z"/>
+  <g id="tree" transform="translate(332 124)">
+    <circle id="crown" cx="34" cy="34" r="34" fill="#1f6b4a"/>
+    <rect id="trunk" x="26" y="62" width="16" height="72" fill="#3c2a22"/>
+    <path id="fruit" fill="#e23d28" d="M46 22h12v12H46z"/>
+  </g>
+</svg>

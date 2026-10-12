@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vertumnus</title>
+  <meta name="description" content="Trace any image to SVG, then harvest the paths that sit fully inside a drag box.">
+  <meta name="theme-color" content="#10120e">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,650&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <div class="brand-name">Vertumnus</div>
+          <div class="brand-sub">Vector studio</div>
+        </div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Tools">
+        <button type="button" role="tab" id="tab-trace" aria-controls="view-trace" aria-selected="true">Trace</button>
+        <button type="button" role="tab" id="tab-harvest" aria-controls="view-harvest" aria-selected="false">Harvest</button>
+      </div>
+      <p class="top-note" id="top-note">Image to SVG, live</p>
+    </header>
+
+    <section id="view-trace" class="view trace-layout is-on" role="tabpanel" aria-labelledby="tab-trace">
+      <aside class="controls">
+        <p class="kicker" id="preset-kicker">Presets</p>
+        <div id="preset-list" class="presets" role="group" aria-label="Trace presets"></div>
+        <p class="kicker">Settings</p>
+        <div id="slider-list" class="sliders"></div>
+        <div id="toggle-list" class="toggles"></div>
+        <details class="more">
+          <summary>More settings</summary>
+          <div id="advanced-list" class="sliders"></div>
+        </details>
+        <p class="api-note">Each change retraces through <code>POST /api/trace</code>.</p>
+      </aside>
+      <section class="preview" aria-label="Trace preview">
+        <div class="preview-bar">
+          <div class="segment" role="group" aria-label="Preview mode">
+            <button type="button" data-view="svg" aria-pressed="true">SVG</button>
+            <button type="button" data-view="source" aria-pressed="false">Source</button>
+            <button type="button" data-view="split" aria-pressed="false">Split</button>
+          </div>
+          <label class="btn" for="image-file">Upload</label>
+          <button type="button" class="btn demo-image">Demo</button>
+          <p id="trace-status" class="status" aria-live="polite">Drop an image to begin.</p>
+          <button id="trace-download" class="btn-primary" type="button" disabled>Download SVG</button>
+        </div>
+        <div id="trace-stage" class="preview-stage checker">
+          <div class="progress" aria-hidden="true"></div>
+          <div id="frames" class="frames" data-mode="svg">
+            <figure class="frame source-frame">
+              <img id="source-img" alt="Raster sent to the tracer">
+              <figcaption>Source</figcaption>
+            </figure>
+            <figure class="frame svg-frame">
+              <div id="svg-mount"></div>
+              <figcaption>SVG</figcaption>
+            </figure>
+          </div>
+          <div id="trace-empty" class="drop-empty">
+            <div class="drop-card">
+              <p>Drop, paste, or upload a PNG, JPEG, WebP, GIF, AVIF, or TIFF. The SVG updates as you move the controls.</p>
+              <div class="drop-actions">
+                <label class="btn-primary" for="image-file">Upload image</label>
+                <button type="button" class="btn demo-image">Load a demo</button>
+              </div>
+            </div>
+          </div>
+          <p id="trace-error" class="banner" hidden></p>
+        </div>
+      </section>
+    </section>
+
+    <section id="view-harvest" class="view harvest-layout" role="tabpanel" aria-labelledby="tab-harvest">
+      <section class="source" aria-label="SVG source">
+        <div class="source-bar">
+          <label class="btn" for="svg-file">Upload</label>
+          <button type="button" class="btn" id="load-sample">Sample</button>
+          <span id="source-name">No file</span>
+        </div>
+        <label class="visually-hidden" for="svg-source">SVG source</label>
+        <textarea id="svg-source" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Paste an SVG here. The drawing updates as you type."></textarea>
+      </section>
+      <section class="board" aria-label="SVG drawing">
+        <div class="board-bar">
+          <div class="segment" role="group" aria-label="Pointer tool">
+            <button type="button" id="tool-select" aria-pressed="true">Select</button>
+            <button type="button" id="tool-pan" aria-pressed="false">Pan</button>
+          </div>
+          <button type="button" class="btn" id="fit-view">Fit</button>
+          <span id="zoom-label">100%</span>
+          <p id="harvest-status" class="status" aria-live="polite">Paste or upload an SVG.</p>
+          <div class="board-actions">
+            <button type="button" class="btn" id="harvest-clear" disabled>Clear</button>
+            <button type="button" class="btn-primary" id="harvest-download" disabled>Download SVG</button>
+          </div>
+        </div>
+        <p class="rule">Drag a box. Only paths and shapes fully inside it are kept. Wheel zooms, space-drag pans.</p>
+        <div id="stage" class="stage" role="application" aria-label="SVG drawing. Drag to select paths and shapes fully inside the box.">
+          <div id="sheet" class="sheet">
+            <div id="svg-host" class="svg-host"></div>
+          </div>
+          <div id="overlay" class="overlay"></div>
+          <div id="marquee" class="marquee" hidden></div>
+          <p id="stage-empty" class="stage-empty">The drawing shows up here.</p>
+        </div>
+      </section>
+    </section>
+  </div>
+  <input id="image-file" class="visually-hidden" type="file" accept="image/*,.svg">
+  <input id="svg-file" class="visually-hidden" type="file" accept=".svg,image/svg+xml">
+  <script src="/js/geometry.js"></script>
+  <script src="/js/util.js"></script>
+  <script src="/js/harvest.js"></script>
+  <script src="/js/trace.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

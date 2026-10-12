@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "api/trace.js": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "includeFiles": "{lib,worker}/**"
+    }
+  }
+}
