@@ -3,9 +3,6 @@ const path = require('path');
 const express = require('express');
 const presetsHandler = require('./api/presets');
 
-// Keep the tracer in the file graph without loading sharp until a trace runs.
-require.resolve('./api/trace');
-
 function createApp() {
   const app = express();
   app.disable('x-powered-by');
@@ -49,22 +46,42 @@ function shutdown() {
   require('./lib/runner').shutdown();
 }
 
-// Vercel loads this file as a module and only routes requests if listen()
-// runs during that startup. `node server.js` is the local server.
-if (require.main === module || process.env.VERCEL) {
-  const port = Number(process.env.PORT) || 3000;
-  const server = createServer();
-  server.listen(port, '0.0.0.0', () => {
-    console.log(`Vertumnus at http://localhost:${port}`);
-  });
-  if (require.main === module) {
-    for (const signal of ['SIGINT', 'SIGTERM']) {
-      process.on(signal, () => {
-        shutdown();
-        server.close(() => process.exit(0));
-      });
-    }
+function createAppSafe() {
+  try {
+    return createApp();
+  } catch (err) {
+    console.error(err);
+    const fallback = express();
+    fallback.use((req, res) => {
+      res.status(500).type('text/plain; charset=utf-8');
+      res.end(err && err.stack ? err.stack : String(err));
+    });
+    return fallback;
   }
 }
 
-module.exports = { createApp, createServer, shutdown };
+const app = createAppSafe();
+
+// Vercel treats this file as a function. Export the Express handler directly.
+function handler(req, res) {
+  app(req, res);
+}
+
+if (require.main === module) {
+  const port = Number(process.env.PORT) || 3000;
+  const server = http.createServer(app);
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`Vertumnus at http://localhost:${port}`);
+  });
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.on(signal, () => {
+      shutdown();
+      server.close(() => process.exit(0));
+    });
+  }
+}
+
+module.exports = handler;
+module.exports.createApp = createApp;
+module.exports.createServer = createServer;
+module.exports.shutdown = shutdown;

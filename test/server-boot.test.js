@@ -1,43 +1,25 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { spawn } = require('node:child_process');
-const path = require('node:path');
+const http = require('node:http');
 
-test('importing the server on Vercel starts listening', async () => {
-  const port = 34567;
-  const proc = spawn(
-    process.execPath,
-    ['-e', `process.env.VERCEL='1'; process.env.PORT='${port}'; require('./server.js');`],
-    { cwd: path.join(__dirname, '..'), stdio: ['ignore', 'pipe', 'pipe'] }
-  );
-  let logs = '';
-  proc.stdout.on('data', (chunk) => {
-    logs += chunk;
-  });
-  proc.stderr.on('data', (chunk) => {
-    logs += chunk;
-  });
+test('the server module is the request handler Vercel invokes', async () => {
+  const handler = require('../server');
+  assert.equal(typeof handler, 'function');
 
+  const server = http.createServer(handler);
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address();
   try {
-    let html = '';
-    const deadline = Date.now() + 8000;
-    while (Date.now() < deadline) {
-      try {
-        const response = await fetch(`http://127.0.0.1:${port}/`);
-        html = await response.text();
-        if (response.status === 200 && html.includes('Vertumnus')) break;
-      } catch (err) {
-        html = '';
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    assert.match(html, /Vertumnus/, logs);
+    const page = await fetch(`http://127.0.0.1:${port}/`);
+    const html = await page.text();
+    assert.equal(page.status, 200);
+    assert.match(html, /Vertumnus/);
 
     const presets = await fetch(`http://127.0.0.1:${port}/api/presets`);
     assert.equal(presets.status, 200);
     const config = await presets.json();
     assert.ok(config.presets.length >= 1);
   } finally {
-    proc.kill('SIGTERM');
+    await new Promise((resolve) => server.close(resolve));
   }
 });
