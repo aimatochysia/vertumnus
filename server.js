@@ -1,9 +1,10 @@
 const http = require('http');
 const path = require('path');
 const express = require('express');
-const traceHandler = require('./api/trace');
 const presetsHandler = require('./api/presets');
-const { shutdown } = require('./lib/runner');
+
+// Keep the tracer in the file graph without loading sharp until a trace runs.
+require.resolve('./api/trace');
 
 function createApp() {
   const app = express();
@@ -22,9 +23,17 @@ function createApp() {
     next(err);
   });
   app.all('/api/trace', (req, res) => {
-    Promise.resolve(traceHandler(req, res)).catch((err) => {
-      if (!res.headersSent) res.status(500).json({ error: 'Trace failed' });
+    let traceHandler;
+    try {
+      traceHandler = require('./api/trace');
+    } catch (err) {
       console.error(err);
+      if (!res.headersSent) res.status(500).json({ error: 'Trace failed to start' });
+      return;
+    }
+    Promise.resolve(traceHandler(req, res)).catch((err) => {
+      console.error(err);
+      if (!res.headersSent) res.status(500).json({ error: 'Trace failed' });
     });
   });
   app.all('/api/presets', presetsHandler);
@@ -36,17 +45,25 @@ function createServer() {
   return http.createServer(createApp());
 }
 
-if (require.main === module) {
+function shutdown() {
+  require('./lib/runner').shutdown();
+}
+
+// Vercel loads this file as a module and only routes requests if listen()
+// runs during that startup. `node server.js` is the local server.
+if (require.main === module || process.env.VERCEL) {
   const port = Number(process.env.PORT) || 3000;
   const server = createServer();
   server.listen(port, '0.0.0.0', () => {
     console.log(`Vertumnus at http://localhost:${port}`);
   });
-  for (const signal of ['SIGINT', 'SIGTERM']) {
-    process.on(signal, () => {
-      shutdown();
-      server.close(() => process.exit(0));
-    });
+  if (require.main === module) {
+    for (const signal of ['SIGINT', 'SIGTERM']) {
+      process.on(signal, () => {
+        shutdown();
+        server.close(() => process.exit(0));
+      });
+    }
   }
 }
 

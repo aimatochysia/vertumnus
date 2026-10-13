@@ -1,9 +1,13 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
+    "server.js": {
+      "maxDuration": 60,
+      "includeFiles": "node_modules/@img/**"
+    },
     "api/trace.js": {
-      "maxDuration": 30,
-      "memory": 1024,
-      "includeFiles": "{lib,worker}/**"
+      "maxDuration": 60,
+      "includeFiles": "node_modules/@img/**"
     }
   }
 }
