@@ -62,7 +62,7 @@ function createAppSafe() {
 
 const app = createAppSafe();
 
-// Vercel treats this file as a function. Export the Express handler directly.
+// Vercel loads this module and calls the export as (req, res).
 function handler(req, res) {
   app(req, res);
 }
